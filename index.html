@@ -423,7 +423,7 @@ let isAnimating = false;
 let editingEvent = null;
 let editingDateKey = null;
 
-const categoryVisibility = JSON.parse(localStorage.getItem("categoryVisibility")) || {
+let categoryVisibility = JSON.parse(localStorage.getItem("categoryVisibility")) || {
   "#ff4757": true,
   "#ffa502": true,
   "#2ed573": true,
@@ -433,7 +433,7 @@ const categoryVisibility = JSON.parse(localStorage.getItem("categoryVisibility")
 };
 
 const colors=["#ff4757","#ffa502","#fffa65","#2ed573","#1e90ff","#5352ed"];
-const categoryNames = JSON.parse(localStorage.getItem("categoryNames")) || {
+let categoryNames = JSON.parse(localStorage.getItem("categoryNames")) || {
   "#ff4757": "카테고리1",
   "#ffa502": "카테고리2",
   "#2ed573": "카테고리3",
