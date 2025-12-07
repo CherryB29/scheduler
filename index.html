@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>📅 일정 관리 앱</title>
+<style>
+body {
+  font-family:'Segoe UI', sans-serif;
+  background:#f0f2f5;
+  margin:0;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+.calendar-container {
+  width:1300px;
+  height:650px;
+  background:#fff;
+  border-radius:16px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.15);
+  position:relative;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+.calendar-header {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:16px 24px;
+  background:#4a90e2;
+  color:#fff;
+  z-index:10;
+  border-top-left-radius:16px;
+  border-top-right-radius:16px;
+  gap:20px;
+}
+.calendar-header h2 {
+  margin:0;
+  font-size:20px;
+  font-weight:600;
+  flex:0 0 auto;
+}
+.calendar-header .date-time {
+  margin-left:auto;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  font-size:12px;
+}
+.calendar-header .date-time .time {
+  font-size:18px;
+  font-weight:bold;
+}
+.calendar-content {
+  display:flex;
+  flex:1;
+  position:relative;
+  overflow:hidden;
+}
+.calendar-main {
+  flex:1;
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+.calendar-grid {
+  display:grid;
+  grid-template-columns:repeat(7,1fr);
+  grid-template-rows:40px repeat(6,1fr);
+  flex:1;
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  transition:left 0.35s ease-out;
+}
+.day-header {
+  text-align:center;
+  font-weight:bold;
+  color:#555;
+  line-height:40px;
+  border-bottom:1px solid #eee;
+}
+.day {
+  border:1px solid #eee;
+  position:relative;
+  padding:6px;
+  cursor:pointer;
+  transition:background 0.2s;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-start;
+  align-items:flex-start;
+}
+.day:hover { background:#f0f7ff; }
+.day-number {
+  font-size:14px;
+  color:#333;
+  font-weight:bold;
+}
+.today {
+  background:#ffefef !important;
+  border:2px solid #ff6b6b !important;
+}
+.dots {
+  position:absolute;
+  top:6px;
+  right:6px;
+  display:flex;
+  gap:3px;
+  flex-wrap:wrap;
+}
+.dot {
+  width:14px;
+  height:14px;
+  border-radius:50%;
+  cursor:pointer;
+  flex-shrink:0;
+}
+.today-sidebar {
+  width:320px;
+  background:#f9f9f9;
+  border-left:1px solid #eee;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+.today-header {
+  padding:16px;
+  background:#4a90e2;
+  color:#fff;
+  text-align:center;
+}
+.today-header h3 {
+  margin:0 0 4px 0;
+  font-size:16px;
+  font-weight:600;
+}
+.today-date {
+  font-size:13px;
+  opacity:0.9;
+}
+.today-events {
+  flex:1;
+  overflow-y:auto;
+  padding:12px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  max-height:calc(100% - 140px);
+}
+.today-event-item {
+  padding:10px;
+  background:#fff;
+  border-radius:8px;
+  border-left:4px solid #4a90e2;
+  display:flex;
+  align-items:flex-start;
+  gap:8px;
+  font-size:13px;
+  box-shadow:0 2px 4px rgba(0,0,0,0.05);
+}
+.today-event-checkbox {
+  width:16px;
+  height:16px;
+  cursor:pointer;
+  accent-color:#4a90e2;
+  margin-top:2px;
+  flex-shrink:0;
+}
+.today-event-text {
+  flex:1;
+  word-break:break-word;
+}
+.today-event-text.completed {
+  text-decoration:line-through;
+  color:#999;
+}
+.today-event-dot {
+  width:12px;
+  height:12px;
+  border-radius:50%;
+  flex-shrink:0;
+}
+.today-empty {
+  text-align:center;
+  color:#999;
+  padding:20px 10px;
+  font-size:14px;
+  margin:auto;
+}
+.popup, .view-popup, .edit-popup {
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  background:#fff;
+  padding:20px;
+  border-radius:16px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.25);
+  width:340px;
+  display:none;
+  flex-direction:column;
+  gap:12px;
+  z-index:100;
+}
+.popup h3, .view-popup h3, .edit-popup h3 {
+  margin:0 0 10px 0;
+  font-size:18px;
+  text-align:center;
+}
+.color-picker {
+  display:flex;
+  gap:12px;
+  justify-content:center;
+  flex-wrap:wrap;
+}
+.color-option {
+  width:28px;
+  height:28px;
+  border-radius:50%;
+  cursor:pointer;
+  border:2px solid transparent;
+  transition: transform 0.2s, border 0.2s;
+}
+.color-option:hover {
+  transform:scale(1.2);
+  border:2px solid #333;
+}
+.popup input, .edit-popup input {
+  padding:10px;
+  font-size:14px;
+  border-radius:10px;
+  border:1px solid #ccc;
+  width:100%;
+  box-sizing:border-box;
+}
+.popup button, .view-popup button, .edit-popup button {
+  padding:10px;
+  border:none;
+  background:#4a90e2;
+  color:#fff;
+  border-radius:10px;
+  cursor:pointer;
+  transition: background 0.2s;
+  font-size:14px;
+}
+.popup button:hover, .view-popup button:hover, .edit-popup button:hover { background:#357abd; }
+.button-group {
+  display:flex;
+  gap:8px;
+}
+.button-group button {
+  flex:1;
+}
+.cancel-btn {
+  background:#999 !important;
+}
+.cancel-btn:hover {
+  background:#777 !important;
+}
+.overlay {
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.4);
+  display:none;
+  z-index:50;
+}
+.view-list {
+  max-height:250px;
+  overflow-y:auto;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.view-item {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:8px 10px;
+  border-radius:10px;
+  background:#f0f0f0;
+  transition:background 0.2s;
+  font-size:13px;
+}
+.view-item:hover { background:#e0e0e0; }
+.view-item .view-dot {
+  width:14px;
+  height:14px;
+  border-radius:50%;
+  flex-shrink:0;
+}
+.view-item .view-text {
+  flex-grow:1;
+  word-break:break-word;
+}
+.view-item button {
+  padding:4px 8px;
+  font-size:12px;
+  width:auto;
+}
+.header-buttons {
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+}
+.header-buttons button {
+  background:rgba(255,255,255,0.2);
+  border:none;
+  color:#fff;
+  font-size:14px;
+  height:32px;
+  border-radius:8px;
+  cursor:pointer;
+  transition: background 0.2s;
+  padding:0 12px;
+  flex-shrink:0;
+}
+.header-buttons button:hover {
+  background: rgba(255,255,255,0.35);
+}
+.legend {
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  align-items:flex-start;
+  padding:12px 16px;
+  background:#fff;
+  border-radius:8px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+}
+.legend-item {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:13px;
+  color:#333;
+}
+.legend-item input[type="checkbox"] {
+  cursor:pointer;
+  width:16px;
+  height:16px;
+}
+.legend-dot {
+  width:20px;
+  height:20px;
+  border-radius:50%;
+  flex-shrink:0;
+}
+.category-name {
+  font-weight:500;
+}
+.category-input {
+  font-size:12px;
+  padding:4px 8px;
+  border:1px solid #ddd;
+  border-radius:6px;
+  width:80px;
+  margin-left:4px;
+}
+.category-input:focus {
+  outline:none;
+  border-color:#4a90e2;
+  background:#f0f7ff;
+}
+</style>
+</head>
+<body>
+
+<div class="calendar-container" id="calendarContainer"></div>
+<div class="overlay" id="overlay"></div>
+
+<div class="popup" id="popup">
+  <h3>일정 추가</h3>
+  <input type="text" id="eventInput" placeholder="일정 내용 입력">
+  <div class="color-picker" id="colorPicker"></div>
+  <button id="saveEvent">저장</button>
+</div>
+
+<div class="edit-popup" id="editPopup">
+  <h3>일정 수정</h3>
+  <input type="text" id="editInput" placeholder="일정 내용 수정">
+  <div class="color-picker" id="editColorPicker"></div>
+  <div class="button-group">
+    <button id="updateEvent">수정</button>
+    <button id="cancelEdit" class="cancel-btn">취소</button>
+  </div>
+</div>
+
+<div class="view-popup" id="viewPopup">
+  <h3>일정 확인</h3>
+  <div class="view-list" id="viewList"></div>
+  <button id="closeView">닫기</button>
+</div>
+
+<script>
+const container = document.getElementById("calendarContainer");
+const popup = document.getElementById("popup");
+const editPopup = document.getElementById("editPopup");
+const viewPopup = document.getElementById("viewPopup");
+const overlay = document.getElementById("overlay");
+const eventInput = document.getElementById("eventInput");
+const editInput = document.getElementById("editInput");
+const saveEventBtn = document.getElementById("saveEvent");
+const updateEventBtn = document.getElementById("updateEvent");
+const cancelEditBtn = document.getElementById("cancelEdit");
+const colorPicker = document.getElementById("colorPicker");
+const editColorPicker = document.getElementById("editColorPicker");
+const viewList = document.getElementById("viewList");
+const closeViewBtn = document.getElementById("closeView");
+
+let today = new Date();
+let currentMonth = today.getMonth();
+let currentYear = today.getFullYear();
+let selectedDate = null;
+let selectedColor = "#ff4757";
+let events = JSON.parse(localStorage.getItem("events"))||{};
+let isAnimating = false;
+let editingEvent = null;
+let editingDateKey = null;
+
+const categoryVisibility = JSON.parse(localStorage.getItem("categoryVisibility")) || {
+  "#ff4757": true,
+  "#ffa502": true,
+  "#2ed573": true,
+  "#1e90ff": true,
+  "#fffa65": true,
+  "#5352ed": true
+};
+
+const colors=["#ff4757","#ffa502","#fffa65","#2ed573","#1e90ff","#5352ed"];
+const categoryNames = JSON.parse(localStorage.getItem("categoryNames")) || {
+  "#ff4757": "카테고리1",
+  "#ffa502": "카테고리2",
+  "#2ed573": "카테고리3",
+  "#1e90ff": "카테고리4",
+  "#fffa65": "카테고리5",
+  "#5352ed": "카테고리6"
+};
+
+colors.forEach(c=>{
+  const div=document.createElement("div");
+  div.className="color-option";
+  div.style.background=c;
+  div.onclick=()=>selectedColor=c;
+  colorPicker.appendChild(div);
+});
+
+colors.forEach(c=>{
+  const div=document.createElement("div");
+  div.className="color-option";
+  div.style.background=c;
+  div.onclick=()=>{
+    if(editingEvent) editingEvent.color=c;
+  };
+  editColorPicker.appendChild(div);
+});
+
+function saveCategoryNames() {
+  localStorage.setItem("categoryNames", JSON.stringify(categoryNames));
+}
+
+function saveCategoryVisibility() {
+  localStorage.setItem("categoryVisibility", JSON.stringify(categoryVisibility));
+}
+
+function renderDots() {
+  const allDots = document.querySelectorAll('.dot');
+  allDots.forEach(dot => {
+    const parent = dot.parentElement.parentElement;
+    const dateKey = Array.from(parent.parentElement.children).indexOf(parent);
+    const color = window.getComputedStyle(dot).backgroundColor;
+    dot.style.display = categoryVisibility[Object.keys(categoryVisibility).find(k => {
+      const rgb = window.getComputedStyle(document.createElement('div')).color;
+      const div = document.createElement('div');
+      div.style.background = k;
+      return window.getComputedStyle(div).backgroundColor === color;
+    })] !== false ? 'block' : 'none';
+  });
+}
+
+function updateClock() {
+  const dateTimeEl = document.querySelector('.date-time');
+  if(dateTimeEl) {
+    const now = new Date();
+    const dateStr = `${now.getMonth()+1}월 ${now.getDate()}일`;
+    const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    dateTimeEl.innerHTML = `<div>${dateStr}</div><div class="time">${timeStr}</div>`;
+  }
+}
+
+function renderTodayEvents() {
+  const todayKey = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
+  const todayEventsList = document.getElementById("todayEventsList");
+  
+  if(!todayEventsList) return;
+  
+  todayEventsList.innerHTML = "";
+  
+  let completedCount = 0;
+  let totalCount = 0;
+  
+  if(events[todayKey] && events[todayKey].length > 0) {
+    totalCount = events[todayKey].length;
+    completedCount = events[todayKey].filter(e => e.completed).length;
+    
+    const statsDiv = document.createElement("div");
+    statsDiv.style.cssText = "font-size:13px;color:#666;padding:8px 0;text-align:center;border-bottom:1px solid #eee;margin-bottom:8px;";
+    statsDiv.textContent = `완료한 일정: ${completedCount}/${totalCount}`;
+    todayEventsList.appendChild(statsDiv);
+    
+    events[todayKey].forEach((ev, idx) => {
+      const item = document.createElement("div");
+      item.className = "today-event-item";
+      
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.className = "today-event-checkbox";
+      checkbox.checked = ev.completed || false;
+      checkbox.onchange = () => {
+        ev.completed = checkbox.checked;
+        localStorage.setItem("events", JSON.stringify(events));
+        renderTodayEvents();
+        renderCalendar(0, false);
+      };
+      
+      const dot = document.createElement("div");
+      dot.className = "today-event-dot";
+      dot.style.background = ev.color;
+      
+      const text = document.createElement("div");
+      text.className = "today-event-text";
+      if(ev.completed) text.classList.add("completed");
+      text.textContent = ev.text;
+      
+      item.appendChild(checkbox);
+      item.appendChild(dot);
+      item.appendChild(text);
+      todayEventsList.appendChild(item);
+    });
+  } else {
+    const empty = document.createElement("div");
+    empty.className = "today-empty";
+    empty.textContent = "오늘의 일정 없음";
+    todayEventsList.appendChild(empty);
+  }
+}
+
+function renderCalendar(direction=0, animate=true){
+  const title = document.querySelector('.calendar-header h2');
+  if(title) title.textContent = `${currentYear}년 ${currentMonth+1}월`;
+  
+  const newCal = document.createElement("div");
+  newCal.className = "calendar-grid";
+  newCal.style.left = direction>0 ? "100%" : direction<0 ? "-100%" : "0";
+
+  const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+  const lastDate = new Date(currentYear, currentMonth+1, 0).getDate();
+
+  ["일","월","화","수","목","금","토"].forEach(d=>{
+    const div = document.createElement("div");
+    div.className = "day-header";
+    div.textContent = d;
+    newCal.appendChild(div);
+  });
+
+  const prevLastDate = new Date(currentYear, currentMonth, 0).getDate();
+  for(let i=firstDay-1;i>=0;i--){
+    const prevDate = prevLastDate - i;
+    const dateObj = new Date(currentYear, currentMonth-1, prevDate);
+    const dateKey = `${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,"0")}-${String(dateObj.getDate()).padStart(2,"0")}`;
+    createDayDiv(newCal, dateObj, dateKey, true);
+  }
+
+  for(let d=1;d<=lastDate;d++){
+    const dateObj = new Date(currentYear, currentMonth, d);
+    const dateKey = `${currentYear}-${String(currentMonth+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+    createDayDiv(newCal, dateObj, dateKey, false);
+  }
+
+  let totalCells = firstDay + lastDate;
+  let nextCount = 7 - (totalCells % 7);
+  if(nextCount < 7){
+    for(let i=1;i<=nextCount;i++){
+      const dateObj = new Date(currentYear, currentMonth+1, i);
+      const dateKey = `${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,"0")}-${String(dateObj.getDate()).padStart(2,"0")}`;
+      createDayDiv(newCal, dateObj, dateKey, true);
+    }
+  }
+
+  const mainEl = document.querySelector('.calendar-main');
+  const oldCal = document.querySelector('.calendar-grid');
+  
+  if(direction === 0 || !animate || !oldCal){
+    if(oldCal) oldCal.replaceWith(newCal);
+    else mainEl.appendChild(newCal);
+    return;
+  }
+
+  if(isAnimating) return;
+  isAnimating = true;
+  mainEl.appendChild(newCal);
+  
+  requestAnimationFrame(() => {
+    newCal.style.left = "0";
+    oldCal.style.left = direction>0 ? "-100%" : "100%";
+  });
+  
+  newCal.addEventListener("transitionend", () => {
+    oldCal.remove();
+    isAnimating = false;
+  }, {once:true});
+}
+
+function createDayDiv(container, dateObj, dateKey, isOtherMonth){
+  const div = document.createElement("div");
+  div.className = "day";
+  if(isOtherMonth) div.style.opacity = "0.4";
+
+  const num = document.createElement("div");
+  num.className = "day-number";
+  num.textContent = dateObj.getDate();
+  div.appendChild(num);
+
+  const dotBox = document.createElement("div");
+  dotBox.className = "dots";
+  
+  if(events[dateKey]){
+    events[dateKey].forEach(ev=>{
+      const dot = document.createElement("div");
+      dot.className = "dot";
+      dot.style.background = ev.color;
+      dot.style.cursor = "pointer";
+      dot.title = ev.text;
+      dot.style.display = categoryVisibility[ev.color] !== false ? 'block' : 'none';
+      
+      dot.oncontextmenu = (e) => {
+        e.preventDefault();
+        openEditPopup(ev, dateKey);
+      };
+      
+      dot.ondblclick = (e) => {
+        e.stopPropagation();
+        if(confirm(`"${ev.text}" 삭제할까요?`)){
+          events[dateKey] = events[dateKey].filter(x => x !== ev);
+          if(!events[dateKey].length) delete events[dateKey];
+          localStorage.setItem("events", JSON.stringify(events));
+          renderCalendar(0, false);
+          renderTodayEvents();
+        }
+      };
+      
+      dotBox.appendChild(dot);
+    });
+  }
+  div.appendChild(dotBox);
+
+  if(!isOtherMonth && dateObj.getFullYear() === today.getFullYear() && dateObj.getMonth() === today.getMonth() && dateObj.getDate() === today.getDate()){
+    div.classList.add("today");
+  }
+
+  div.onclick = () => {
+    if(!isOtherMonth) {
+      selectedDate = dateKey;
+      openPopup();
+    }
+  };
+  
+  div.oncontextmenu = (e) => {
+    e.preventDefault();
+    if(!isOtherMonth) {
+      selectedDate = dateKey;
+      openViewPopup();
+    }
+  };
+
+  container.appendChild(div);
+}
+
+function openPopup(){
+  popup.style.display = "flex";
+  overlay.style.display = "block";
+  eventInput.value = "";
+  eventInput.focus();
+}
+
+function closePopup(){
+  popup.style.display = "none";
+  overlay.style.display = "none";
+}
+
+function openEditPopup(ev, dateKey){
+  editingEvent = ev;
+  editingDateKey = dateKey;
+  editInput.value = ev.text;
+  editPopup.style.display = "flex";
+  overlay.style.display = "block";
+  editInput.focus();
+}
+
+function closeEditPopup(){
+  editPopup.style.display = "none";
+  overlay.style.display = "none";
+  editingEvent = null;
+  editingDateKey = null;
+}
+
+function openViewPopup(){
+  viewList.innerHTML = "";
+  if(events[selectedDate]){
+    events[selectedDate].forEach(ev => {
+      const div = document.createElement("div");
+      div.className = "view-item";
+      
+      const dot = document.createElement("div");
+      dot.className = "view-dot";
+      dot.style.background = ev.color;
+      
+      const text = document.createElement("div");
+      text.className = "view-text";
+      text.textContent = ev.text;
+      
+      const editBtn = document.createElement("button");
+      editBtn.textContent = "✏️";
+      editBtn.onclick = () => {
+        closeViewPopup();
+        openEditPopup(ev, selectedDate);
+      };
+      
+      const delBtn = document.createElement("button");
+      delBtn.textContent = "✕";
+      delBtn.onclick = () => {
+        events[selectedDate] = events[selectedDate].filter(x => x !== ev);
+        if(!events[selectedDate].length) delete events[selectedDate];
+        localStorage.setItem("events", JSON.stringify(events));
+        renderCalendar(0, false);
+        renderTodayEvents();
+        openViewPopup();
+      };
+      
+      div.appendChild(dot);
+      div.appendChild(text);
+      div.appendChild(editBtn);
+      div.appendChild(delBtn);
+      viewList.appendChild(div);
+    });
+  } else {
+    const p = document.createElement("div");
+    p.textContent = "일정 없음";
+    viewList.appendChild(p);
+  }
+  viewPopup.style.display = "flex";
+  overlay.style.display = "block";
+}
+
+function closeViewPopup(){
+  viewPopup.style.display = "none";
+  overlay.style.display = "none";
+}
+
+saveEventBtn.onclick = () => {
+  if(!selectedDate) return;
+  const text = eventInput.value.trim();
+  if(text){
+    if(!events[selectedDate]) events[selectedDate] = [];
+    events[selectedDate].push({text, color: selectedColor, completed: false});
+    localStorage.setItem("events", JSON.stringify(events));
+    renderCalendar(0, false);
+    renderTodayEvents();
+  }
+  closePopup();
+};
+
+updateEventBtn.onclick = () => {
+  if(!editingEvent || !editingDateKey) return;
+  const text = editInput.value.trim();
+  if(text){
+    editingEvent.text = text;
+    localStorage.setItem("events", JSON.stringify(events));
+    renderCalendar(0, false);
+    renderTodayEvents();
+  }
+  closeEditPopup();
+};
+
+cancelEditBtn.onclick = closeEditPopup;
+closeViewBtn.onclick = closeViewPopup;
+
+overlay.onclick = () => {
+  closePopup();
+  closeEditPopup();
+  closeViewPopup();
+};
+
+function changeMonth(delta){
+  if(isAnimating) return;
+  currentMonth += delta;
+  if(currentMonth < 0){ currentMonth = 11; currentYear--; }
+  if(currentMonth > 11){ currentMonth = 0; currentYear++; }
+  renderCalendar(delta, true);
+}
+
+function goToday(){
+  if(isAnimating) return;
+  let monthsDiff = (today.getFullYear() - currentYear) * 12 + (today.getMonth() - currentMonth);
+  if(monthsDiff === 0) return;
+  let step = monthsDiff > 0 ? 1 : -1;
+  
+  function slideNext(){
+    if(currentYear === today.getFullYear() && currentMonth === today.getMonth()) return;
+    if(isAnimating) return;
+    currentMonth += step;
+    if(currentMonth < 0){ currentMonth = 11; currentYear--; }
+    if(currentMonth > 11){ currentMonth = 0; currentYear++; }
+    renderCalendar(step, true);
+    setTimeout(() => { slideNext(); }, 400);
+  }
+  slideNext();
+}
+
+const fileInput = document.createElement("input");
+fileInput.type = "file";
+fileInput.accept = ".json";
+fileInput.style.display = "none";
+fileInput.onchange = (e) => {
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    try{
+      const imported = JSON.parse(event.target.result);
+      if(imported.events && typeof imported.events === "object"){
+        events = imported.events;
+        if(imported.categoryNames) categoryNames = {...categoryNames, ...imported.categoryNames};
+        if(imported.categoryVisibility) categoryVisibility = {...categoryVisibility, ...imported.categoryVisibility};
+        localStorage.setItem("events", JSON.stringify(events));
+        localStorage.setItem("categoryNames", JSON.stringify(categoryNames));
+        localStorage.setItem("categoryVisibility", JSON.stringify(categoryVisibility));
+        renderCalendar(0, false);
+        renderTodayEvents();
+        alert("✅ 일정을 성공적으로 불러왔습니다!");
+      } else if(typeof imported === "object" && imported !== null && !imported.events){
+        events = imported;
+        localStorage.setItem("events", JSON.stringify(events));
+        renderCalendar(0, false);
+        renderTodayEvents();
+        alert("✅ 일정을 성공적으로 불러왔습니다!");
+      } else {
+        alert("❌ 잘못된 파일 형식입니다.");
+      }
+    } catch(err){
+      alert("❌ 파일을 읽을 수 없습니다: " + err.message);
+    }
+  };
+  reader.readAsText(file);
+};
+document.body.appendChild(fileInput);
+
+function exportEvents(){
+  const data = JSON.stringify({
+    events: events,
+    categoryNames: categoryNames,
+    categoryVisibility: categoryVisibility
+  }, null, 2);
+  const blob = new Blob([data], {type: "application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `calendar_${new Date().toISOString().split("T")[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  alert("✅ 일정이 내보내기 되었습니다!");
+}
+
+function importEvents(){
+  fileInput.click();
+}
+
+const header = document.createElement("div");
+header.className = "calendar-header";
+
+const prevBtn = document.createElement("button");
+prevBtn.textContent = "◀";
+prevBtn.onclick = () => changeMonth(-1);
+
+const title = document.createElement("h2");
+
+const nextBtn = document.createElement("button");
+nextBtn.textContent = "▶";
+nextBtn.onclick = () => changeMonth(1);
+
+const todayBtn = document.createElement("button");
+todayBtn.textContent = "오늘";
+todayBtn.onclick = goToday;
+
+const exportBtn = document.createElement("button");
+exportBtn.textContent = "⬇️ 내보내기";
+exportBtn.onclick = exportEvents;
+
+const importBtn = document.createElement("button");
+importBtn.textContent = "⬆️ 가져오기";
+importBtn.onclick = importEvents;
+
+const dateTime = document.createElement("div");
+dateTime.className = "date-time";
+
+const btnGroup = document.createElement("div");
+btnGroup.className = "header-buttons";
+btnGroup.appendChild(prevBtn);
+btnGroup.appendChild(nextBtn);
+btnGroup.appendChild(todayBtn);
+btnGroup.appendChild(exportBtn);
+btnGroup.appendChild(importBtn);
+
+header.appendChild(btnGroup);
+header.appendChild(title);
+header.appendChild(dateTime);
+container.appendChild(header);
+
+const content = document.createElement("div");
+content.className = "calendar-content";
+
+const mainDiv = document.createElement("div");
+mainDiv.className = "calendar-main";
+content.appendChild(mainDiv);
+
+const sidebar = document.createElement("div");
+sidebar.className = "today-sidebar";
+
+const sidebarHeader = document.createElement("div");
+sidebarHeader.className = "today-header";
+sidebarHeader.innerHTML = "<h3>📋 오늘의 일정</h3><div class='today-date'></div>";
+sidebar.appendChild(sidebarHeader);
+
+const sidebarEvents = document.createElement("div");
+sidebarEvents.id = "todayEventsList";
+sidebarEvents.className = "today-events";
+sidebar.appendChild(sidebarEvents);
+
+const legendBox = document.createElement("div");
+legendBox.className = "legend";
+colors.forEach(color => {
+  const item = document.createElement("div");
+  item.className = "legend-item";
+  
+  const checkbox = document.createElement("input");
+  checkbox.type = "checkbox";
+  checkbox.checked = categoryVisibility[color] !== false;
+  checkbox.onchange = () => {
+    categoryVisibility[color] = checkbox.checked;
+    saveCategoryVisibility();
+    renderCalendar(0, false);
+  };
+  
+  const dot = document.createElement("div");
+  dot.className = "legend-dot";
+  dot.style.background = color;
+  
+  const nameSpan = document.createElement("span");
+  nameSpan.className = "category-name";
+  nameSpan.textContent = categoryNames[color];
+  nameSpan.style.cursor = "pointer";
+  nameSpan.style.minWidth = "60px";
+  
+  nameSpan.onclick = () => {
+    const newName = prompt("카테고리명 변경:", categoryNames[color]);
+    if(newName && newName.trim()) {
+      categoryNames[color] = newName.trim();
+      saveCategoryNames();
+      nameSpan.textContent = categoryNames[color];
+    }
+  };
+  
+  item.appendChild(checkbox);
+  item.appendChild(dot);
+  item.appendChild(nameSpan);
+  legendBox.appendChild(item);
+});
+sidebar.appendChild(legendBox);
+
+content.appendChild(sidebar);
+container.appendChild(content);
+
+// Create legend (removed from bottom)
+// const legend = document.createElement("div");
+// legend.className = "legend";
+// colors.forEach(color => {
+//   const item = document.createElement("div");
+//   item.className = "legend-item";
+//   
+//   const checkbox = document.createElement("input");
+//   checkbox.type = "checkbox";
+//   checkbox.checked = categoryVisibility[color] !== false;
+//   checkbox.onchange = () => {
+//     categoryVisibility[color] = checkbox.checked;
+//     saveCategoryVisibility();
+//     renderCalendar(0, false);
+//   };
+//   
+//   const dot = document.createElement("div");
+//   dot.className = "legend-dot";
+//   dot.style.background = color;
+//   
+//   const nameSpan = document.createElement("span");
+//   nameSpan.className = "category-name";
+//   nameSpan.textContent = categoryNames[color];
+//   nameSpan.style.cursor = "pointer";
+//   nameSpan.style.minWidth = "60px";
+//   
+//   nameSpan.onclick = () => {
+//     const newName = prompt("카테고리명 변경:", categoryNames[color]);
+//     if(newName && newName.trim()) {
+//       categoryNames[color] = newName.trim();
+//       saveCategoryNames();
+//       nameSpan.textContent = categoryNames[color];
+//     }
+//   };
+//   
+//   item.appendChild(checkbox);
+//   item.appendChild(dot);
+//   item.appendChild(nameSpan);
+//   legend.appendChild(item);
+// });
+// container.appendChild(legend);
+
+updateClock();
+setInterval(updateClock, 1000);
+
+const sidebarDate = document.querySelector(".today-header .today-date");
+setInterval(() => {
+  const now = new Date();
+  sidebarDate.textContent = `${now.getMonth()+1}월 ${now.getDate()}일`;
+}, 1000);
+
+renderCalendar();
+renderTodayEvents();
+</script>
+</body>
+</html>
